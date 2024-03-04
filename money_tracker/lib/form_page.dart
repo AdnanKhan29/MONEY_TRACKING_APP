@@ -1,42 +1,55 @@
 import 'package:flutter/material.dart';
 
-class FormPage extends StatelessWidget {
+class FormPage extends StatefulWidget {
+  @override
+  _FormPageState createState() => _FormPageState();
+}
+
+class _FormPageState extends State<FormPage> {
+  String _name = '';
+  int _age = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Page'),
-        backgroundColor: Color(0xffe8e9c9), // Replace with your desired color
+        title: Text('Add Person'),
+        backgroundColor: Color(0xff85bb65), // Replace with your desired color
       ),
-      body: Padding(
-        padding: EdgeInsets.all(20.0),
+      body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
+            TextFormField(
               decoration: InputDecoration(
                 labelText: 'Name',
               ),
+              onChanged: (value) {
+                setState(() {
+                  _name = value;
+                });
+              },
             ),
-            SizedBox(height: 10.0),
-            TextField(
+            TextFormField(
               decoration: InputDecoration(
                 labelText: 'Age',
               ),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                setState(() {
+                  _age = int.tryParse(value) ?? 0;
+                });
+              },
             ),
-            SizedBox(height: 10.0),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Email (optional)',
-              ),
-            ),
-            SizedBox(height: 10.0),
             ElevatedButton(
               onPressed: () {
-                // Handle form submission (you can add logic to save data)
-                print('Form submitted!');
-                Navigator.pop(context); // Navigate back to HomePage
+                // Pass data back to HomePage
+                Navigator.pop(context, {
+                  'name': _name,
+                  'age': _age,
+                });
               },
-              child: Text('Save'),
+              child: Text('Submit'),
             ),
           ],
         ),
