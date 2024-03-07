@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:moneytracker/home_page.dart';
+import 'package:moneytracker/login.dart';
 
 class LandingPage extends StatefulWidget {
   @override
@@ -14,7 +15,7 @@ class _LandingPageState extends State<LandingPage> {
     Future.delayed(Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (context) => LoginPage()),
       );
     });
   }
@@ -27,14 +28,14 @@ class _LandingPageState extends State<LandingPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/home_image.png', // Add your landing image asset path
+              'assets/home_image.png',
               height: 200.0,
             ),
-            SizedBox(height: 20), // Spacing between image and text
+            SizedBox(height: 20),
             Padding(
-              // Add bottom padding
+
               child: Text(
-                "Money Tracker!", // Replace with your desired text
+                "Money Tracker!",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

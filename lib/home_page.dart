@@ -28,12 +28,12 @@ class _HomePageState extends State<HomePage> {
 
                 // Check if result is not null
                 if (result != null) {
-                  // Retrieve submitted data and set default spending
+                  // Retrieve submitted data and set default current
                   setState(() {
                     _persons.add({
                       'name': result['name'],
                       'age': result['age'],
-                      'spending': 0, // Default spending value
+                      'current': 0, // Default current value
                     });
                   });
                 }
@@ -59,7 +59,7 @@ class _HomePageState extends State<HomePage> {
                         SizedBox(height: 8),
                         Text('Age: ${person['age']}', style: TextStyle(fontSize: 16)),
                         SizedBox(height: 8),
-                        Text('Spending: ${person['spending']}', style: TextStyle(fontSize: 16)),
+                        Text('current: ${person['current']}', style: TextStyle(fontSize: 16)),
                         SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: () {
@@ -87,14 +87,15 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        // Add money to spending
+                                        // Add money to current
                                         setState(() {
-                                          person['spending'] += moneyToAdd;
+                                          person['current'] += moneyToAdd;
                                         });
                                         Navigator.pop(context);
                                       },
                                       child: Text('Submit'),
                                     ),
+
                                   ],
                                 );
                               },
