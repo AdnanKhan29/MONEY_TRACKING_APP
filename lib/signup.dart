@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:moneytracker/home_page.dart'; // Import your home screen if available
+import 'package:moneytracker/login.dart'; // Import your login page
+import 'package:moneytracker/usreg.dart';
+import 'ApiService.dart';
 
 class SignupPage extends StatefulWidget {
   @override
@@ -6,11 +11,35 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  final _formKey = GlobalKey<FormState>();
+  final ApiService apiService = ApiService();
+  final TextEditingController username = TextEditingController();
+  final TextEditingController email = TextEditingController();
+  final TextEditingController password = TextEditingController();
+  List<UserReg> users = [];
+  UserReg? selectUsers;
 
-  TextEditingController _usernameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  @override
+  void initState(){
+    super.initState();
+    _getUsers();
+  }
+
+  _getUsers() async{
+    users = await apiService.getUsers();
+  }
+
+  _addUsers() async{
+    await apiService.addUsers(
+      UserReg(
+        username: username.text,
+        email: email.text,
+        password: password.text,
+      )
+    );
+    await _getUsers();
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +51,6 @@ class _SignupPageState extends State<SignupPage> {
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -33,7 +60,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 SizedBox(height: 16.0),
                 TextFormField(
-                  controller: _usernameController,
+                  controller: username,
                   decoration: InputDecoration(
                     labelText: 'Username',
                     border: OutlineInputBorder(
@@ -50,7 +77,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 SizedBox(height: 16.0),
                 TextFormField(
-                  controller: _emailController,
+                  controller: email,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     border: OutlineInputBorder(
@@ -67,7 +94,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 SizedBox(height: 16.0),
                 TextFormField(
-                  controller: _passwordController,
+                  controller: password,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     border: OutlineInputBorder(
@@ -87,10 +114,21 @@ class _SignupPageState extends State<SignupPage> {
                   },
                 ),
                 SizedBox(height: 16.0),
+                ElevatedButton(
+                  onPressed: (){
+                    _addUsers();
+                    print("success");
+                  },
+                  child: Text('Sign Up'),
+                ),
+                SizedBox(height: 16.0),
                 GestureDetector(
                   onTap: () {
                     // Navigate to login page
-                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginPage()),
+                    );
                   },
                   child: Text(
                     'Already have an account? Login',
@@ -100,28 +138,8 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () {
-                    // Validate the form before submission
-                    if (_formKey.currentState!.validate()) {
-                      // If the form is valid, perform signup logic here
-                      String username = _usernameController.text;
-                      String email = _emailController.text;
-                      String password = _passwordController.text;
-                      // Perform signup logic with username, email, and password
-                      // For demonstration purposes, you can print these values
-                      print('Username: $username');
-                      print('Email: $email');
-                      print('Password: $password');
-                      // After signup, you can navigate to the home page or perform other actions
-                    }
-                  },
-                  child: Text('Sign Up'),
-                ),
               ],
             ),
-          ),
         ),
       ),
       backgroundColor: Color(0xffe8e9c9),

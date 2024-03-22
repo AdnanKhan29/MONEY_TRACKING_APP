@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:moneytracker/home_page.dart'; // Import your home page file
-import 'package:moneytracker/signup.dart'; // Import your signup page file
 
 class LoginPage extends StatefulWidget {
   @override
@@ -10,6 +9,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   TextEditingController _usernameController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
+
+  // Define the fixed username and password
+  static const String fixedUsername = 'admin';
+  static const String fixedPassword = 'password';
 
   @override
   Widget build(BuildContext context) {
@@ -80,53 +83,38 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  ElevatedButton(
-                    onPressed: () {
-                      // Perform login logic here
-                      String username = _usernameController.text;
-                      String password = _passwordController.text;
-                      // For demonstration purposes, check if username and password are not empty
-                      if (username.isNotEmpty && password.isNotEmpty) {
-                        // Navigate to home page if login is successful
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => HomePage()),
-                        );
-                      } else {
-                        // Show error message if username or password is empty
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('Error'),
-                            content: Text('Please enter both username and password.'),
-                            actions: <Widget>[
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text('OK'),
-                              ),
-                            ],
+              ElevatedButton(
+                onPressed: () {
+                  // Perform login logic here
+                  String username = _usernameController.text;
+                  String password = _passwordController.text;
+                  // Check if username and password match the fixed values
+                  if (username == fixedUsername && password == fixedPassword) {
+                    // Navigate to home page if login is successful
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomePage()),
+                    );
+                  } else {
+                    // Show error message if username or password is incorrect
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('Error'),
+                        content: Text('Invalid username or password.'),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('OK'),
                           ),
-                        );
-                      }
-                    },
-                    child: Text('Login'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to signup page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignupPage()),
-                      );
-                    },
-                    child: Text('Sign Up'),
-                  ),
-                ],
+                        ],
+                      ),
+                    );
+                  }
+                },
+                child: Text('Login'),
               ),
             ],
           ),

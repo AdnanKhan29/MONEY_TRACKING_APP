@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:moneytracker/form_page.dart';
 import 'package:moneytracker/person_detail_page.dart';
 
@@ -8,14 +10,79 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, dynamic>> _persons = [];
+  List<dynamic> _persons = [];
+
+  Future<void> _fetchPersons() async {
+    final response = await http.get(Uri.parse('http://localhost:3000/api/persons'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _persons = json.decode(response.body);
+      });
+    } else {
+      throw Exception('Failed to load persons');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPersons();
+  }
+
+  Future<void> _addMoney(String id, int amount, String description) async {
+    final response = await http.put(
+      Uri.parse('http://localhost:3000/api/persons/$id/addMoney'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'amount': amount,
+        'description': description,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      await _fetchPersons(); // Refresh persons list after updating balance
+    } else {
+      throw Exception('Failed to add money');
+    }
+  }
+
+  Future<void> _spendMoney(String id, int amount, String description) async {
+    final response = await http.put(
+      Uri.parse('http://localhost:3000/api/persons/$id/spendMoney'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'amount': amount,
+        'description': description,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      await _fetchPersons(); // Refresh persons list after updating balance
+    } else {
+      throw Exception('Failed to spend money');
+    }
+  }
+
+  Future<void> _deletePerson(String id) async {
+    final response = await http.delete(Uri.parse('http://localhost:3000/api/persons/$id'));
+
+    if (response.statusCode == 200) {
+      await _fetchPersons(); // Refresh persons list after deleting
+    } else {
+      throw Exception('Failed to delete person');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Home Page'),
-        backgroundColor: Color(0xff85bb65), // Replace with your desired color
+        backgroundColor: Color(0xff85bb65),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -27,17 +94,9 @@ class _HomePageState extends State<HomePage> {
                 // Navigate to FormPage and wait for result
                 final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => FormPage()));
 
-                // Check if result is not null
-                if (result != null) {
-                  // Retrieve submitted data and set default current
-                  setState(() {
-                    _persons.add({
-                      'name': result['name'],
-                      'age': result['age'],
-                      'current': 0, // Default current value
-                      'transactions': [], // List to store transactions
-                    });
-                  });
+                // Fetch updated list of persons after adding a new person
+                if (result != null && result) {
+                  await _fetchPersons();
                 }
               },
               child: Text('Add Person!'),
@@ -45,7 +104,7 @@ class _HomePageState extends State<HomePage> {
             SizedBox(height: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _persons.map((person) {
+              children: _persons.map<Widget>((person) {
                 return Card(
                   color: Colors.white,
                   elevation: 4,
@@ -66,6 +125,7 @@ class _HomePageState extends State<HomePage> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text('Name: ${person['name']}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           SizedBox(height: 8),
@@ -73,122 +133,62 @@ class _HomePageState extends State<HomePage> {
                           SizedBox(height: 8),
                           Text('Current: ${person['current']}', style: TextStyle(fontSize: 16)),
                           SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Show dialog to add money
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  int moneyToAdd = 0;
-                                  String description = '';
-                                  return AlertDialog(
-                                    title: Text('Add Money'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        TextField(
-                                          decoration: InputDecoration(labelText: 'Enter amount'),
-                                          keyboardType: TextInputType.number,
-                                          onChanged: (value) {
-                                            moneyToAdd = int.tryParse(value) ?? 0;
-                                          },
-                                        ),
-                                        TextField(
-                                          decoration: InputDecoration(labelText: 'Enter description'),
-                                          onChanged: (value) {
-                                            description = value;
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          // Close dialog
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          // Add money to current and save transaction
-                                          setState(() {
-                                            person['current'] += moneyToAdd;
-                                            person['transactions'].add({
-                                              'amount': moneyToAdd,
-                                              'description': description,
-                                              'timestamp': DateTime.now(),
-                                            });
-                                          });
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text('Submit'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            child: Text('Add Money'),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Flexible(
+                                flex: 1,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => _buildMoneyDialog(context, person['_id'], true),
+                                    );
+                                  },
+                                  child: Text('Add Money'),
+                                ),
+                              ),
+                              Flexible(
+                                flex: 1,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => _buildMoneyDialog(context, person['_id'], false),
+                                    );
+                                  },
+                                  child: Text('Spend Money'),
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(height: 8),
                           ElevatedButton(
-                            onPressed: () {
-                              // Show dialog to spend money
+                            onPressed: () async {
                               showDialog(
                                 context: context,
-                                builder: (context) {
-                                  int moneyToSpend = 0;
-                                  String description = '';
-                                  return AlertDialog(
-                                    title: Text('Spend Money'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        TextField(
-                                          decoration: InputDecoration(labelText: 'Enter amount'),
-                                          keyboardType: TextInputType.number,
-                                          onChanged: (value) {
-                                            moneyToSpend = int.tryParse(value) ?? 0;
-                                          },
-                                        ),
-                                        TextField(
-                                          decoration: InputDecoration(labelText: 'Enter description'),
-                                          onChanged: (value) {
-                                            description = value;
-                                          },
-                                        ),
-                                      ],
+                                builder: (context) => AlertDialog(
+                                  title: Text('Confirm Delete'),
+                                  content: Text('Are you sure you want to delete this person?'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () async {
+                                        await _deletePerson(person['_id']);
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text('Yes'),
                                     ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          // Close dialog
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          // Spend money and save transaction
-                                          setState(() {
-                                            person['current'] -= moneyToSpend;
-                                            person['transactions'].add({
-                                              'amount': -moneyToSpend, // negative amount for spending
-                                              'description': description,
-                                              'timestamp': DateTime.now(),
-                                            });
-                                          });
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text('Submit'),
-                                      ),
-                                    ],
-                                  );
-                                },
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text('No'),
+                                    ),
+                                  ],
+                                ),
                               );
                             },
-                            child: Text('Spend Money'),
+                            child: Text('Delete Person'),
                           ),
                         ],
                       ),
@@ -201,6 +201,50 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       backgroundColor: Color(0xffe8e9c9),
+    );
+  }
+
+  Widget _buildMoneyDialog(BuildContext context, String personId, bool isAddingMoney) {
+    TextEditingController _amountController = TextEditingController();
+    TextEditingController _descriptionController = TextEditingController();
+
+    return AlertDialog(
+        title: Text(isAddingMoney ? 'Add Money' : 'Spend Money'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _amountController,
+              decoration: InputDecoration(labelText: 'Amount'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(labelText: 'Description'),
+            ),
+          ],
+        ),
+        actions: <Widget>[
+        TextButton(
+        onPressed: () {
+      Navigator.of(context).pop();
+    },
+    child: Text('Cancel'),
+    ),
+    TextButton(
+    onPressed: () async {
+    int amount = int.tryParse(_amountController.text) ?? 0;
+    String description = _descriptionController.text;
+    if (isAddingMoney) {
+    await _addMoney(personId, amount, description);
+    } else {
+    await _spendMoney(personId, amount, description);
+    }
+    Navigator.of(context).pop();
+    },
+      child: Text('Submit'),
+    ),
+        ],
     );
   }
 }
