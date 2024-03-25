@@ -13,7 +13,7 @@ class _FormPageState extends State<FormPage> {
 
   Future<void> _addPerson() async {
     final response = await http.post(
-      Uri.parse('http://localhost:3000/api/addPerson'),
+      Uri.parse('http://localhost:3000/api/persons'), // Corrected endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -24,12 +24,15 @@ class _FormPageState extends State<FormPage> {
     );
 
     if (response.statusCode == 201) {
-      // Pop with result to trigger fetching updated data in the homepage
+      // Person added successfully
       Navigator.pop(context, true);
     } else {
+      // Failed to add person, print response body for debugging
+      print('Failed to add person: ${response.body}');
       throw Exception('Failed to add person');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
